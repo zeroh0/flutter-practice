@@ -57,6 +57,8 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
   void _incrementCounter() {
+    // setState() 메서드를 호출함으로써 해당 state가 변경되었음을 알려주고 build 메서드를 다시 호출하여 변경된 값이 반영되도록 함.
+    // setState() 메서드를 호출하지 않고 _counter를 변경하면 build 메서드가 다시 호출되지 않아 변경된 값이 반영되지 않음.
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
@@ -69,6 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // setState() 메서드가 호출될 때 마다 build 메서드가 다시 호출되어 화면이 다시 그려짐.
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
