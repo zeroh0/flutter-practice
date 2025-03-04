@@ -1,125 +1,415 @@
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const TodoApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TodoApp extends StatelessWidget {
+  const TodoApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: '할 일 목록',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomeScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
 
-  void _incrementCounter() {
-    // setState() 메서드를 호출함으로써 해당 state가 변경되었음을 알려주고 build 메서드를 다시 호출하여 변경된 값이 반영되도록 함.
-    // setState() 메서드를 호출하지 않고 _counter를 변경하면 build 메서드가 다시 호출되지 않아 변경된 값이 반영되지 않음.
+  // 표시될 화면 목록
+  final List<Widget> _screens = [
+    const TodayTodoScreen(),
+    const CalendarScreen(),
+  ];
+
+  void _onItemTapped(int index) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _selectedIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // setState() 메서드가 호출될 때 마다 build 메서드가 다시 호출되어 화면이 다시 그려짐.
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      appBar: AppBar(title: const Text('할 일 목록')),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.check_box), label: '오늘 할 일'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: '캘린더',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.blue,
+        onTap: _onItemTapped,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+    );
+  }
+}
+
+// 오늘 할 일 화면
+class TodayTodoScreen extends StatefulWidget {
+  const TodayTodoScreen({Key? key}) : super(key: key);
+
+  @override
+  _TodayTodoScreenState createState() => _TodayTodoScreenState();
+}
+
+class _TodayTodoScreenState extends State<TodayTodoScreen> {
+  final List<Todo> _todos = [];
+  final TextEditingController _textController = TextEditingController();
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _addTodo(String title) {
+    setState(() {
+      _todos.add(
+        Todo(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          title: title,
+          completed: false,
+        ),
+      );
+      _textController.clear();
+    });
+  }
+
+  void _toggleTodo(String id, bool isCompleted) {
+    setState(() {
+      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
+      if (todoIndex != -1) {
+        _todos[todoIndex] = _todos[todoIndex].copyWith(completed: isCompleted);
+      }
+    });
+  }
+
+  void _deleteTodo(String id) {
+    setState(() {
+      _todos.removeWhere((todo) => todo.id == id);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  decoration: const InputDecoration(
+                    hintText: '할 일을 입력하세요',
+                    border: OutlineInputBorder(),
+                  ),
+                  onSubmitted: (value) {
+                    if (value.isNotEmpty) {
+                      _addTodo(value);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton(
+                onPressed: () {
+                  if (_textController.text.isNotEmpty) {
+                    _addTodo(_textController.text);
+                  }
+                },
+                child: const Text('추가'),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child:
+              _todos.isEmpty
+                  ? const Center(child: Text('등록된 할 일이 없습니다.'))
+                  : ListView.builder(
+                    itemCount: _todos.length,
+                    itemBuilder: (context, index) {
+                      final todo = _todos[index];
+                      return ListTile(
+                        leading: Checkbox(
+                          value: todo.completed,
+                          onChanged: (value) {
+                            _toggleTodo(todo.id, value ?? false);
+                          },
+                        ),
+                        title: Text(
+                          todo.title,
+                          style: TextStyle(
+                            decoration:
+                                todo.completed
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            _deleteTodo(todo.id);
+                          },
+                        ),
+                      );
+                    },
+                  ),
+        ),
+      ],
+    );
+  }
+}
+
+// 캘린더 화면
+class CalendarScreen extends StatefulWidget {
+  const CalendarScreen({Key? key}) : super(key: key);
+
+  @override
+  _CalendarScreenState createState() => _CalendarScreenState();
+}
+
+class _CalendarScreenState extends State<CalendarScreen> {
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+  Map<DateTime, List<Todo>> _events = {};
+  final TextEditingController _eventController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _focusedDay;
+  }
+
+  @override
+  void dispose() {
+    _eventController.dispose();
+    super.dispose();
+  }
+
+  // 선택한 날짜의 이벤트 목록을 가져오는 함수
+  List<Todo> _getEventsForDay(DateTime day) {
+    // Convert DateTime to yyyy-MM-dd format for proper comparison
+    final normalizedDate = DateTime(day.year, day.month, day.day);
+    return _events[normalizedDate] ?? [];
+  }
+
+  // 새 할 일 추가 함수
+  void _addNewTask() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('할 일 추가'),
+            content: TextField(
+              controller: _eventController,
+              decoration: const InputDecoration(hintText: '할 일을 입력하세요'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('취소'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (_eventController.text.isEmpty) return;
+
+                  setState(() {
+                    // Convert DateTime to yyyy-MM-dd format for proper storage
+                    final normalizedDate = DateTime(
+                      _selectedDay!.year,
+                      _selectedDay!.month,
+                      _selectedDay!.day,
+                    );
+
+                    // 해당 날짜에 이벤트가 없으면 빈 리스트 생성
+                    if (_events[normalizedDate] == null) {
+                      _events[normalizedDate] = [];
+                    }
+
+                    // 새 할 일 추가
+                    _events[normalizedDate]!.add(
+                      Todo(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        title: _eventController.text,
+                        completed: false,
+                      ),
+                    );
+
+                    _eventController.clear();
+                  });
+                  Navigator.pop(context);
+                },
+                child: const Text('추가'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // 할 일 완료/미완료 토글 함수
+  void _toggleTask(Todo task) {
+    setState(() {
+      final normalizedDate = DateTime(
+        _selectedDay!.year,
+        _selectedDay!.month,
+        _selectedDay!.day,
+      );
+
+      final taskIndex = _events[normalizedDate]!.indexWhere(
+        (t) => t.id == task.id,
+      );
+      if (taskIndex != -1) {
+        _events[normalizedDate]![taskIndex] =
+            _events[normalizedDate]![taskIndex].copyWith(
+              completed: !_events[normalizedDate]![taskIndex].completed,
+            );
+      }
+    });
+  }
+
+  // 할 일 삭제 함수
+  void _deleteTask(Todo task) {
+    setState(() {
+      final normalizedDate = DateTime(
+        _selectedDay!.year,
+        _selectedDay!.month,
+        _selectedDay!.day,
+      );
+
+      _events[normalizedDate]!.removeWhere((t) => t.id == task.id);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TableCalendar(
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2030, 12, 31),
+          focusedDay: _focusedDay,
+          calendarFormat: _calendarFormat,
+          eventLoader: _getEventsForDay,
+          selectedDayPredicate: (day) {
+            return isSameDay(_selectedDay, day);
+          },
+          onDaySelected: (selectedDay, focusedDay) {
+            if (!isSameDay(_selectedDay, selectedDay)) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            }
+          },
+          onFormatChanged: (format) {
+            if (_calendarFormat != format) {
+              setState(() {
+                _calendarFormat = format;
+              });
+            }
+          },
+          onPageChanged: (focusedDay) {
+            _focusedDay = focusedDay;
+          },
+          calendarStyle: const CalendarStyle(
+            markerDecoration: BoxDecoration(
+              color: Colors.blue,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: ElevatedButton.icon(
+                onPressed: _addNewTask,
+                icon: const Icon(Icons.add),
+                label: const Text('할 일 추가'),
+              ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        const SizedBox(height: 8.0),
+        Expanded(
+          child:
+              _selectedDay == null
+                  ? const Center(child: Text('날짜를 선택하세요'))
+                  : _getEventsForDay(_selectedDay!).isEmpty
+                  ? const Center(child: Text('선택한 날짜의 할 일이 없습니다'))
+                  : ListView.builder(
+                    itemCount: _getEventsForDay(_selectedDay!).length,
+                    itemBuilder: (context, index) {
+                      final event = _getEventsForDay(_selectedDay!)[index];
+                      return ListTile(
+                        leading: Checkbox(
+                          value: event.completed,
+                          onChanged: (value) {
+                            _toggleTask(event);
+                          },
+                        ),
+                        title: Text(
+                          event.title,
+                          style: TextStyle(
+                            decoration:
+                                event.completed
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _deleteTask(event),
+                        ),
+                      );
+                    },
+                  ),
+        ),
+      ],
+    );
+  }
+}
+
+// 할 일 모델 클래스
+class Todo {
+  final String id;
+  final String title;
+  final bool completed;
+
+  Todo({required this.id, required this.title, required this.completed});
+
+  Todo copyWith({String? id, String? title, bool? completed}) {
+    return Todo(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      completed: completed ?? this.completed,
     );
   }
 }
